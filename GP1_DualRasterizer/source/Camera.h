@@ -77,7 +77,7 @@ struct Camera final
 		return projectionMatrix;
 	}
 
-	const Matrix& GetWorldViewProjection() const
+	Matrix GetWorldViewProjection() const
 	{
 		return GetViewMatrix() * GetProjectionMatrix();
 	}
