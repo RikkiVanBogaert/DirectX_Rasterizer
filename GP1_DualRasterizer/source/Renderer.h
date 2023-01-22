@@ -35,6 +35,7 @@ using namespace dae;
 		void SwitchBoundingBoxVisualization();
 		void ToggleUniformClearColor();
 		void ToggleCullMode();
+		void SwitchFPSPrinting(bool& printFPS);
 
 	private:
 		//SHARED
@@ -61,8 +62,8 @@ using namespace dae;
 		std::vector<MeshRepresentation*> m_pMeshes;
 		MeshRepresentation* m_pFireMesh;
 
-		void RenderDirectX() const;
-		void UpdateDirectX(const Timer* pTimer);
+		void RenderHardware() const;
+		void UpdateHardware(const Timer* pTimer);
 
 		//Rasterizer
 		SDL_Surface* m_pFrontBuffer{ nullptr };
@@ -86,14 +87,14 @@ using namespace dae;
 		};
 		LightMode m_LightMode{ LightMode::Combined };
 
-		void RenderRasterizer(); 
-		void UpdateRasterizer(const Timer* pTimer);
+		void RenderSoftware(); 
+		void UpdateSoftware(const Timer* pTimer);
 
 		ColorRGB PixelShading(const Vertex_Out& v) const;
 		void VertexTransformationFunctionW4(std::vector<MeshRast>& meshes) const;
 
 		//Switch States
-		bool m_UsingDirectX = true;
+		bool m_UsingHardware = true;
 		bool m_IsRotating = true;
 		bool m_UsingFireMesh = true;
 		bool m_UsingNormalMap = true;
@@ -101,10 +102,9 @@ using namespace dae;
 		bool m_BoundingBoxVisualization = false;
 		bool m_UniformClearColor = false;
 
-		//Color
-		const int m_Yellow{ 14 };
-		const int m_Green{ 10 };
-		const int m_Magenta{ 13 };
-		const int m_Red{ 12 };
-		const int m_White{ 15 };
+		//TextColors
+		const int m_WhiteText{ 15 };
+		const int m_YellowText{ 6 };
+		const int m_GreenText{ 10 };
+		const int m_MagentaText{ 13 };
 	};

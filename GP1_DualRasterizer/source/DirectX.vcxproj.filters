@@ -55,7 +55,7 @@
     <ClInclude Include="Texture.h">
       <Filter>MyClasses</Filter>
     </ClInclude>
-    <ClInclude Include="ShadedEffect.h">
+    <ClInclude Include="EffectShader.h">
       <Filter>MyClasses</Filter>
     </ClInclude>
   </ItemGroup>
@@ -87,7 +87,7 @@
     <ClCompile Include="Texture.cpp">
       <Filter>MyClasses</Filter>
     </ClCompile>
-    <ClCompile Include="ShadedEffect.cpp">
+    <ClCompile Include="EffectShader.cpp">
       <Filter>MyClasses</Filter>
     </ClCompile>
   </ItemGroup>

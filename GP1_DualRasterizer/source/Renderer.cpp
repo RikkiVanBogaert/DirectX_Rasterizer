@@ -3,7 +3,7 @@
 #include "Renderer.h"
 #include "MeshRepresentation.h"
 #include "Texture.h"
-#include "ShadedEffect.h"
+#include "EffectShader.h"
 #include "Utils.h"
 
 HANDLE m_hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -45,7 +45,6 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	
 	m_pMeshes.push_back(new MeshRepresentation{ m_pDevice, "Resources/vehicle.obj", std::move(pShadedEffect) });
 
-
 	Effect* pTransparentEffect{ new Effect(m_pDevice, L"Resources/Transparent3D.fx") };
 	
 	Texture fireDiffuseTexture{ m_pDevice, "Resources/fireFX_diffuse.png" };
@@ -53,7 +52,6 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	m_pFireMesh = new MeshRepresentation{ m_pDevice,"Resources/fireFX.obj",std::move(pTransparentEffect) };
 
 	m_pMeshes.push_back(m_pFireMesh);
-
 
 
 	//INITIALIZE RASTERIZER
@@ -73,7 +71,7 @@ Renderer::Renderer(SDL_Window* pWindow) :
 
 	using namespace std;
 	{
-		SetConsoleTextAttribute(m_hConsole, m_Yellow);
+		SetConsoleTextAttribute(m_hConsole, m_YellowText);
 		cout << "[Key bindings - SHARED]\n";
 		cout << "    [F1]  Toggle Rasterizer Mode (HARDWARE/SOFTWARE)\n";
 		cout << "    [F2]  Toggle Vehicle Rotation (ON/OFF)\n";
@@ -81,19 +79,19 @@ Renderer::Renderer(SDL_Window* pWindow) :
 		cout << "    [F10] Toggle Uniform ClearColor (ON/OFF)\n";
 		cout << "    [F11] Toggle Print FPS (ON/OFF)\n";
 		cout << '\n';
-		SetConsoleTextAttribute(m_hConsole, m_Green);
+		SetConsoleTextAttribute(m_hConsole, m_GreenText);
 		cout << "[Key bindings - HARDWARE]\n";
 		cout << "    [F3]  Toggle FireFX (ON/OFF)\n";
 		cout << "    [F4]  Cycle Sampler State (POINT/LINEAR/ANISOTROPIC)\n";
 		cout << '\n';
-		SetConsoleTextAttribute(m_hConsole, m_Magenta);
+		SetConsoleTextAttribute(m_hConsole, m_MagentaText);
 		cout << "[Key bindings - SOFTWARE]\n";
 		cout << "    [F5]  Cycle Shading Mode (COMBINED/OBSERVED_AREA/DIFFUSE/SPECULAR)\n";
 		cout << "    [F6]  Toggle NormalMap (ON/OFF)\n";
 		cout << "    [F7]  Toggle DepthBuffer Visualization (ON/OFF)\n";
 		cout << "    [F8]  Toggle BoundingBox Visualization (ON/OFF)\n";
 		cout << '\n';
-		SetConsoleTextAttribute(m_hConsole, m_White);
+		SetConsoleTextAttribute(m_hConsole, m_WhiteText);
 	}
 }
 
@@ -244,13 +242,13 @@ void Renderer::Update(const Timer* pTimer)
 		m_Angle += rotationSpeed;
 	}
 
-	if (m_UsingDirectX)
-		UpdateDirectX(pTimer);
+	if (m_UsingHardware)
+		UpdateHardware(pTimer);
 	else
-		UpdateRasterizer(pTimer);
+		UpdateSoftware(pTimer);
 }
 
-void Renderer::UpdateDirectX(const Timer* pTimer)
+void Renderer::UpdateHardware(const Timer* pTimer)
 {
 	for (auto& m : m_pMeshes)
 	{
@@ -259,7 +257,7 @@ void Renderer::UpdateDirectX(const Timer* pTimer)
 	}
 }
 
-void Renderer::UpdateRasterizer(const Timer* pTimer)
+void Renderer::UpdateSoftware(const Timer* pTimer)
 {
 	for (auto& m : m_pMeshesRast)
 	{
@@ -270,13 +268,13 @@ void Renderer::UpdateRasterizer(const Timer* pTimer)
 //RENDERING
 void Renderer::Render()
 {
-	if(m_UsingDirectX)
-		RenderDirectX();
+	if(m_UsingHardware)
+		RenderHardware();
 	else
-		RenderRasterizer();
+		RenderSoftware();
 }
 
-void Renderer::RenderDirectX() const
+void Renderer::RenderHardware() const
 {
 	if (!m_IsInitialized)
 		return;
@@ -302,7 +300,7 @@ void Renderer::RenderDirectX() const
 
 }
 
-void Renderer::RenderRasterizer()
+void Renderer::RenderSoftware()
 {
 	SDL_LockSurface(m_pBackBuffer);
 	//Clear backBuffer
@@ -632,25 +630,25 @@ ColorRGB Renderer::PixelShading(const Vertex_Out& v) const
 //SWITCH STATES
 void Renderer::SwitchState()
 {
-	m_UsingDirectX = !m_UsingDirectX;
+	m_UsingHardware = !m_UsingHardware;
 
-	SetConsoleTextAttribute(m_hConsole, m_Yellow);
-	if (m_UsingDirectX)
+	SetConsoleTextAttribute(m_hConsole, m_YellowText);
+	if (m_UsingHardware)
 	{
-		std::cout << " DirectX\n";
+		std::cout << " Hardware\n";
 	}
 	else
 	{
-		std::cout << " Rasterizer\n";
+		std::cout << " Software\n";
 	}
-	SetConsoleTextAttribute(m_hConsole, m_White);
+	SetConsoleTextAttribute(m_hConsole, m_WhiteText);
 }
 
 void Renderer::SwitchRotating()
 {
 	m_IsRotating = !m_IsRotating;
 
-	SetConsoleTextAttribute(m_hConsole, m_Yellow);
+	SetConsoleTextAttribute(m_hConsole, m_YellowText);
 	if (m_IsRotating)
 	{
 		std::cout << " Rotation Enabled\n";
@@ -659,18 +657,18 @@ void Renderer::SwitchRotating()
 	{
 		std::cout << " Rotation Disabled\n";
 	}
-	SetConsoleTextAttribute(m_hConsole, m_White);
+	SetConsoleTextAttribute(m_hConsole, m_WhiteText);
 
 }
 
 void Renderer::SwitchUsingFire()
 {
-	if (!m_UsingDirectX)
+	if (!m_UsingHardware)
 		return;
 
 	m_UsingFireMesh = !m_UsingFireMesh;
 
-	SetConsoleTextAttribute(m_hConsole, m_Green);
+	SetConsoleTextAttribute(m_hConsole, m_GreenText);
 	if (m_UsingFireMesh)
 	{
 		std::cout << " FireMesh Enabled\n";
@@ -679,12 +677,12 @@ void Renderer::SwitchUsingFire()
 	{
 		std::cout << " FireMesh Disabled\n";
 	}
-	SetConsoleTextAttribute(m_hConsole, m_White);
+	SetConsoleTextAttribute(m_hConsole, m_WhiteText);
 }
 
 void Renderer::SwitchTechniques() const
 {
-	if (!m_UsingDirectX)
+	if (!m_UsingHardware)
 		return;
 
 	for (auto& m : m_pMeshes)
@@ -692,7 +690,7 @@ void Renderer::SwitchTechniques() const
 		m->ToggleTechniques();
 	}
 
-	SetConsoleTextAttribute(m_hConsole, m_Green);
+	SetConsoleTextAttribute(m_hConsole, m_GreenText);
 	switch (m_pMeshes[0]->GetSampleState())
 	{
 	case Effect::FilteringMethod::Point:
@@ -707,12 +705,12 @@ void Renderer::SwitchTechniques() const
 	default:
 		break;
 	}
-	SetConsoleTextAttribute(m_hConsole, m_White);
+	SetConsoleTextAttribute(m_hConsole, m_WhiteText);
 }
 
 void Renderer::SwitchShadingMode()
 {
-	if (m_UsingDirectX)
+	if (m_UsingHardware)
 		return;
 
 	if (int(m_LightMode) < 3) // < amount lightingModes - 1
@@ -720,7 +718,7 @@ void Renderer::SwitchShadingMode()
 	else
 		m_LightMode = LightMode(0);
 
-	SetConsoleTextAttribute(m_hConsole, m_Magenta);
+	SetConsoleTextAttribute(m_hConsole, m_MagentaText);
 	switch (m_LightMode)
 	{
 	case Renderer::LightMode::Combined:
@@ -739,17 +737,17 @@ void Renderer::SwitchShadingMode()
 		break;
 	}
 
-	SetConsoleTextAttribute(m_hConsole, m_White);
+	SetConsoleTextAttribute(m_hConsole, m_WhiteText);
 }
 
 void Renderer::SwitchNormalMap()
 {
-	if (m_UsingDirectX)
+	if (m_UsingHardware)
 		return;
 
 	m_UsingNormalMap = !m_UsingNormalMap;
 
-	SetConsoleTextAttribute(m_hConsole, m_Magenta);
+	SetConsoleTextAttribute(m_hConsole, m_MagentaText);
 	if (m_UsingNormalMap)
 	{
 		std::cout << " Normals Enabled\n";
@@ -758,16 +756,16 @@ void Renderer::SwitchNormalMap()
 	{
 		std::cout << " Normals Disabled\n";
 	}
-	SetConsoleTextAttribute(m_hConsole, m_White);
+	SetConsoleTextAttribute(m_hConsole, m_WhiteText);
 }
 
 void Renderer::SwitchDepthBufferVisualization()
 {
-	if (m_UsingDirectX)
+	if (m_UsingHardware)
 		return;
 
 	m_DepthBufferVisualization = !m_DepthBufferVisualization;
-	SetConsoleTextAttribute(m_hConsole, m_Magenta);
+	SetConsoleTextAttribute(m_hConsole, m_MagentaText);
 	if (m_DepthBufferVisualization)
 	{
 		std::cout << " DepthBuffer Visualization Enabled\n";
@@ -776,17 +774,17 @@ void Renderer::SwitchDepthBufferVisualization()
 	{
 		std::cout << " DepthBuffer Visualization Disabled\n";
 	}
-	SetConsoleTextAttribute(m_hConsole, m_White);
+	SetConsoleTextAttribute(m_hConsole, m_WhiteText);
 }
 
 void Renderer::SwitchBoundingBoxVisualization()
 {
-	if (m_UsingDirectX)
+	if (m_UsingHardware)
 		return;
 
 	m_BoundingBoxVisualization = !m_BoundingBoxVisualization;
 
-	SetConsoleTextAttribute(m_hConsole, m_Magenta);
+	SetConsoleTextAttribute(m_hConsole, m_MagentaText);
 	if (m_BoundingBoxVisualization)
 	{
 		std::cout << " BoundingBox Visualization Enabled\n";
@@ -795,14 +793,14 @@ void Renderer::SwitchBoundingBoxVisualization()
 	{
 		std::cout << " BoundingBox Visualization Disabled\n";
 	}
-	SetConsoleTextAttribute(m_hConsole, m_White);
+	SetConsoleTextAttribute(m_hConsole, m_WhiteText);
 }
 
 void Renderer::ToggleUniformClearColor()
 {
 	m_UniformClearColor = !m_UniformClearColor;
 
-	SetConsoleTextAttribute(m_hConsole, m_Yellow);
+	SetConsoleTextAttribute(m_hConsole, m_YellowText);
 	if (m_UniformClearColor)
 	{
 		std::cout << " Uniform ClearColor Enabled\n";
@@ -811,14 +809,14 @@ void Renderer::ToggleUniformClearColor()
 	{
 		std::cout << " Uniform ClearColor Disabled\n";
 	}
-	SetConsoleTextAttribute(m_hConsole, m_White);
+	SetConsoleTextAttribute(m_hConsole, m_WhiteText);
 }
 
 void Renderer::ToggleCullMode()
 {
 	m_pMeshes[0]->ToggleCullMode();
 
-	SetConsoleTextAttribute(m_hConsole, m_Yellow);
+	SetConsoleTextAttribute(m_hConsole, m_YellowText);
 	switch (m_pMeshes[0]->GetCullMode())
 	{
 	case Effect::CullMode::None:
@@ -834,5 +832,16 @@ void Renderer::ToggleCullMode()
 		break;
 	}
 
-	SetConsoleTextAttribute(m_hConsole, m_White);
+	SetConsoleTextAttribute(m_hConsole, m_WhiteText);
+}
+
+void Renderer::SwitchFPSPrinting(bool& printFPS)
+{
+	printFPS = !printFPS;
+	SetConsoleTextAttribute(m_hConsole, m_YellowText);
+	if (printFPS)
+		std::cout << " Print FPS ON\n";
+	else
+		std::cout << " Print FPS OFF\n";
+	SetConsoleTextAttribute(m_hConsole, m_WhiteText);
 }

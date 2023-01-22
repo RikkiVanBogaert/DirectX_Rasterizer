@@ -91,7 +91,7 @@ int main(int argc, char* args[])
 					pRenderer->ToggleUniformClearColor();
 					break;
 				case SDL_SCANCODE_F11:
-					g_PrintPFS = !g_PrintPFS;
+					pRenderer->SwitchFPSPrinting(g_PrintPFS);
 					break;
 				}
 				break;
