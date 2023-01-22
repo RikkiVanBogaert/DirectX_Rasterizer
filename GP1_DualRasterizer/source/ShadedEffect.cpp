@@ -31,9 +31,6 @@ ShadedEffect::~ShadedEffect()
 		m_pEffect->Release();
 		m_pEffect = nullptr;
 	}
-	/*m_pNormalMapVariable->Release();
-	m_pSpecularMapVariable->Release();
-	m_pGlossinessMapVariable->Release();*/
 }
 
 void ShadedEffect::SetNormalMap(Texture* pNormalTexture)
@@ -59,13 +56,3 @@ void ShadedEffect::SetGlossinessMap(Texture* pGlossinessTexture)
 		m_pGlossinessMapVariable->SetResource(pGlossinessTexture->GetSRV());
 	}
 }
-
-//void ShadedEffect::SetWorldMatrix(const Matrix& matrix)
-//{
-//	m_pWorldVariable->SetMatrix(reinterpret_cast<const float*>(&matrix));
-//}
-//
-//void ShadedEffect::SetViewInvertMatrix(const Matrix& matrix)
-//{
-//	m_pViewInverseVariable->SetMatrix(reinterpret_cast<const float*>(&matrix));
-//}

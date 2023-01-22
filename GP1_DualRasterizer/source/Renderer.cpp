@@ -6,11 +6,7 @@
 #include "ShadedEffect.h"
 #include "Utils.h"
 
-#define RESET   "\033[0m"
-#define GREEN   "\033[32m"     
-#define YELLOW  "\033[33m"       
-#define MAGENTA "\033[35m"      
-
+HANDLE m_hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
 using namespace dae;
 
@@ -20,10 +16,10 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	//Initialize
 	SDL_GetWindowSize(pWindow, &m_Width, &m_Height);
 	m_Camera.Initialize(45.f,  {0.f, 0.f, 0.f}, float(m_Width) / m_Height );
-	m_Translation = { 0, 0, 50 };
+	m_Translation = { 0, 0, 50.f };
 	m_Angle = 0;
 
-	////Initialize DirectX pipeline
+	//Initialize DirectX pipeline
 	const HRESULT result = InitializeDirectX();
 	if (result == S_OK)
 	{
@@ -37,14 +33,15 @@ Renderer::Renderer(SDL_Window* pWindow) :
 
 	ShadedEffect* pShadedEffect{ new ShadedEffect(m_pDevice, L"Resources/PosCol3D.fx") };
 	
-	Texture vehicleDiffuseTexture{ m_pDevice, "Resources/vehicle_diffuse.png" };
-	Texture vehicleNormalTexture{ m_pDevice,"Resources/vehicle_normal.png" };
-	Texture vehicleSpecularTexture{ m_pDevice,"Resources/vehicle_specular.png" };
-	Texture vehicleGlossinessTexture{ m_pDevice,"Resources/vehicle_gloss.png" };
-	pShadedEffect->SetDiffuseMap(&vehicleDiffuseTexture);
-	pShadedEffect->SetNormalMap(&vehicleNormalTexture);
-	pShadedEffect->SetSpecularMap(&vehicleSpecularTexture);
-	pShadedEffect->SetGlossinessMap(&vehicleGlossinessTexture);
+	m_pDiffuseTxt = new Texture{ m_pDevice, "Resources/vehicle_diffuse.png" };
+	m_pNormalTxt = new Texture{ m_pDevice, "Resources/vehicle_normal.png" };
+	m_pSpecularTxt = new Texture{ m_pDevice, "Resources/vehicle_specular.png" };
+	m_pGlossTxt = new Texture{ m_pDevice, "Resources/vehicle_gloss.png" };
+
+	pShadedEffect->SetDiffuseMap(m_pDiffuseTxt);
+	pShadedEffect->SetNormalMap(m_pNormalTxt);
+	pShadedEffect->SetSpecularMap(m_pSpecularTxt);
+	pShadedEffect->SetGlossinessMap(m_pGlossTxt);
 	
 	m_pMeshes.push_back(new MeshRepresentation{ m_pDevice, "Resources/vehicle.obj", std::move(pShadedEffect) });
 
@@ -68,12 +65,6 @@ Renderer::Renderer(SDL_Window* pWindow) :
 
 	m_pDepthBufferPixels = new float[m_Width * m_Height];
 
-	//initialize Textures
-	m_pDiffuseTxt = Texture::LoadFromFile("Resources/vehicle_diffuse.png");
-	m_pNormalTxt = Texture::LoadFromFile("Resources/vehicle_normal.png");
-	m_pSpecularTxt = Texture::LoadFromFile("Resources/vehicle_specular.png");
-	m_pGlossTxt = Texture::LoadFromFile("Resources/vehicle_gloss.png");
-
 	//Mesh
 	MeshRast& mesh = m_pMeshesRast.emplace_back(MeshRast{});
 	Utils::ParseOBJ("Resources/vehicle.obj", mesh.vertices, mesh.indices);
@@ -82,27 +73,27 @@ Renderer::Renderer(SDL_Window* pWindow) :
 
 	using namespace std;
 	{
-		cout << YELLOW;
-		cout << "[Key bindings - SHARED]" << '\n';
-		cout << "    [F1]  Toggle Rasterizer Mode (HARDWARE/SOFTWARE)" << '\n';
-		cout << "    [F2]  Toggle Vehicle Rotation (ON/OFF)" << '\n';
-		cout << "    [F9]  Cycle CullMode (BACK/FRONT/NONE)" << '\n';
-		cout << "    [F10] Toggle Uniform ClearColor (ON/OFF)" << '\n';
-		cout << "    [F11] Toggle Print FPS (ON/OFF)" << '\n';
+		SetConsoleTextAttribute(m_hConsole, m_Yellow);
+		cout << "[Key bindings - SHARED]\n";
+		cout << "    [F1]  Toggle Rasterizer Mode (HARDWARE/SOFTWARE)\n";
+		cout << "    [F2]  Toggle Vehicle Rotation (ON/OFF)\n";
+		cout << "    [F9]  Cycle CullMode (BACK/FRONT/NONE)\n";
+		cout << "    [F10] Toggle Uniform ClearColor (ON/OFF)\n";
+		cout << "    [F11] Toggle Print FPS (ON/OFF)\n";
 		cout << '\n';
-		cout << GREEN;
-		cout << "[Key bindings - HARDWARE]" << '\n';
-		cout << "    [F3]  Toggle FireFX (ON/OFF)" << '\n';
-		cout << "    [F4]  Cycle Sampler State (POINT/LINEAR/ANISOTROPIC)" << '\n';
+		SetConsoleTextAttribute(m_hConsole, m_Green);
+		cout << "[Key bindings - HARDWARE]\n";
+		cout << "    [F3]  Toggle FireFX (ON/OFF)\n";
+		cout << "    [F4]  Cycle Sampler State (POINT/LINEAR/ANISOTROPIC)\n";
 		cout << '\n';
-		cout << MAGENTA;
-		cout << "[Key bindings - SOFTWARE]" << '\n';
-		cout << "    [F5]  Cycle Shading Mode (COMBINED/OBSERVED_AREA/DIFFUSE/SPECULAR)" << '\n';
-		cout << "    [F6]  Toggle NormalMap (ON/OFF)" << '\n';
-		cout << "    [F7]  Toggle DepthBuffer Visualization (ON/OFF)" << '\n';
-		cout << "    [F8]  Toggle BoundingBox Visualization (ON/OFF)" << '\n';
+		SetConsoleTextAttribute(m_hConsole, m_Magenta);
+		cout << "[Key bindings - SOFTWARE]\n";
+		cout << "    [F5]  Cycle Shading Mode (COMBINED/OBSERVED_AREA/DIFFUSE/SPECULAR)\n";
+		cout << "    [F6]  Toggle NormalMap (ON/OFF)\n";
+		cout << "    [F7]  Toggle DepthBuffer Visualization (ON/OFF)\n";
+		cout << "    [F8]  Toggle BoundingBox Visualization (ON/OFF)\n";
 		cout << '\n';
-		cout << RESET;
+		SetConsoleTextAttribute(m_hConsole, m_White);
 	}
 }
 
@@ -242,14 +233,14 @@ HRESULT Renderer::InitializeDirectX()
 		return result;
 	}
 
-
+//UPDATE
 void Renderer::Update(const Timer* pTimer)
 {
 	m_Camera.Update(pTimer);
 
 	if(m_IsRotating)
 	{
-		const float rotationSpeed{ 0.8f * pTimer->GetElapsed() };
+		const float rotationSpeed{ float(M_PI / 4.f) * pTimer->GetElapsed() };
 		m_Angle += rotationSpeed;
 	}
 
@@ -259,6 +250,24 @@ void Renderer::Update(const Timer* pTimer)
 		UpdateRasterizer(pTimer);
 }
 
+void Renderer::UpdateDirectX(const Timer* pTimer)
+{
+	for (auto& m : m_pMeshes)
+	{
+		m->Update(m_Camera.GetWorldViewProjection(), m_Camera.GetInverseViewMatrix());
+		m->SetWorldMatrix(Matrix::CreateRotationY(m_Angle) * Matrix::CreateTranslation(m_Translation));
+	}
+}
+
+void Renderer::UpdateRasterizer(const Timer* pTimer)
+{
+	for (auto& m : m_pMeshesRast)
+	{
+		m.worldMatrix = Matrix::CreateRotationY(m_Angle) * Matrix::CreateTranslation(m_Translation);
+	}
+}
+
+//RENDERING
 void Renderer::Render()
 {
 	if(m_UsingDirectX)
@@ -291,22 +300,6 @@ void Renderer::RenderDirectX() const
 	//3. PRESENT BACKBUFFER (SWAP)
 	m_pSwapChain->Present( 1, 0); //use (1,0) instead of (0,0) to fix camera rotation jumps, drops fps tho
 
-}
-
-void Renderer::UpdateDirectX(const Timer* pTimer)
-{
-	for (auto& m : m_pMeshes)
-	{
-		m->Update(m_Camera.GetWorldViewProjection(), m_Camera.GetInverseViewMatrix(), m_Angle, m_Translation);
-	}
-}
-
-void Renderer::UpdateRasterizer(const Timer* pTimer)
-{
-	for (auto& m : m_pMeshesRast)
-	{
-		m.worldMatrix = Matrix::CreateRotationY(m_Angle) * Matrix::CreateTranslation(m_Translation);
-	}
 }
 
 void Renderer::RenderRasterizer()
@@ -482,24 +475,32 @@ void Renderer::RenderRasterizer()
 						Vector3 A3{A.position.x, A.position.y, A.position.z};
 						Vector3 B3{ B.position.x, B.position.y, B.position.z };
 						Vector3 C3{ C.position.x, C.position.y, C.position.z };
+
+						dae::Vector2 A2{ A.position.x, A.position.y };
+						dae::Vector2 B2{ B.position.x, B.position.y };
+						dae::Vector2 C2{ C.position.x, C.position.y };
+
 						Vector3 interpolatedPos{
 							(A3 / A.position.w) * wA +
 							(B3 / B.position.w) * wB +
 							(C3 / C.position.w) * wC
 						};
-						viewDirectionInterpolated *= interpolatedW;
-						viewDirectionInterpolated.Normalize();
+						interpolatedPos *= interpolatedW;
+						//interpolatedPos.Normalize();
 
 						Vector3 rayToCamera{ (interpolatedPos - m_Camera.origin).Normalized() };
+						rayToCamera = m_Camera.right;
 
-						if (Vector3::Dot(normalInterpolated, rayToCamera) == 0)
+						if (Vector3::Dot(A.normal, rayToCamera) == 0)
 							continue;
 
-						if (Vector3::Dot(normalInterpolated, rayToCamera) > 0 &&
-							m_CullMode == CullMode::Back) continue;
+						if (Vector3::Dot(A.normal, rayToCamera) > 0.f &&
+							m_pMeshes[0]->GetCullMode() == Effect::CullMode::Back) continue;
 
-						if (Vector3::Dot(normalInterpolated, rayToCamera) < 0 &&
-							m_CullMode == CullMode::Front) continue;
+						if (Vector3::Dot(A.normal, rayToCamera) < 0.f &&
+							m_pMeshes[0]->GetCullMode() == Effect::CullMode::Front) continue;
+
+
 
 						if (m_DepthBufferVisualization)
 						{
@@ -627,34 +628,38 @@ ColorRGB Renderer::PixelShading(const Vertex_Out& v) const
 	return finalColor;
 }
 
+
+//SWITCH STATES
 void Renderer::SwitchState()
 {
 	m_UsingDirectX = !m_UsingDirectX;
 
+	SetConsoleTextAttribute(m_hConsole, m_Yellow);
 	if (m_UsingDirectX)
 	{
-		std::cout << YELLOW << "DirectX\n";
+		std::cout << " DirectX\n";
 	}
 	else
 	{
-		std::cout << YELLOW << "Rasterizer\n";
+		std::cout << " Rasterizer\n";
 	}
-	std::cout << RESET;
+	SetConsoleTextAttribute(m_hConsole, m_White);
 }
 
 void Renderer::SwitchRotating()
 {
 	m_IsRotating = !m_IsRotating;
 
+	SetConsoleTextAttribute(m_hConsole, m_Yellow);
 	if (m_IsRotating)
 	{
-		std::cout << YELLOW << "Rotation Enabled\n";
+		std::cout << " Rotation Enabled\n";
 	}
 	else
 	{
-		std::cout << YELLOW << "Rotation Disabled\n";
+		std::cout << " Rotation Disabled\n";
 	}
-	std::cout << RESET;
+	SetConsoleTextAttribute(m_hConsole, m_White);
 
 }
 
@@ -665,15 +670,16 @@ void Renderer::SwitchUsingFire()
 
 	m_UsingFireMesh = !m_UsingFireMesh;
 
+	SetConsoleTextAttribute(m_hConsole, m_Green);
 	if (m_UsingFireMesh)
 	{
-		std::cout << GREEN << " FireMesh Enabled\n";
+		std::cout << " FireMesh Enabled\n";
 	}
 	else
 	{
-		std::cout << GREEN << " FireMesh Disabled\n";
+		std::cout << " FireMesh Disabled\n";
 	}
-	std::cout << RESET;
+	SetConsoleTextAttribute(m_hConsole, m_White);
 }
 
 void Renderer::SwitchTechniques() const
@@ -686,21 +692,22 @@ void Renderer::SwitchTechniques() const
 		m->ToggleTechniques();
 	}
 
+	SetConsoleTextAttribute(m_hConsole, m_Green);
 	switch (m_pMeshes[0]->GetSampleState())
 	{
-	case 0:
-		std::cout << GREEN << " Point\n";
+	case Effect::FilteringMethod::Point:
+		std::cout << " Point\n";
 		break;
-	case 1:
-		std::cout << GREEN << " Linear\n";
+	case  Effect::FilteringMethod::Linear:
+		std::cout << " Linear\n";
 		break;
-	case 2:
-		std::cout << GREEN << " Anisotropic\n";
+	case  Effect::FilteringMethod::Anisotropic:
+		std::cout << " Anisotropic\n";
 		break;
 	default:
 		break;
 	}
-	std::cout << RESET;
+	SetConsoleTextAttribute(m_hConsole, m_White);
 }
 
 void Renderer::SwitchShadingMode()
@@ -713,25 +720,26 @@ void Renderer::SwitchShadingMode()
 	else
 		m_LightMode = LightMode(0);
 
+	SetConsoleTextAttribute(m_hConsole, m_Magenta);
 	switch (m_LightMode)
 	{
 	case Renderer::LightMode::Combined:
-		std::cout << MAGENTA << "Combined\n";
+		std::cout << "Combined\n";
 		break;
 	case Renderer::LightMode::Diffuse:
-		std::cout << MAGENTA << "Diffuse\n";
+		std::cout << "Diffuse\n";
 		break;
 	case Renderer::LightMode::Specular:
-		std::cout << MAGENTA << "Specular\n";
+		std::cout << "Specular\n";
 		break;
 	case Renderer::LightMode::ObservedArea:
-		std::cout << MAGENTA << "ObservedArea\n";
+		std::cout << "ObservedArea\n";
 		break;
 	default:
 		break;
 	}
 
-	std::cout << RESET;
+	SetConsoleTextAttribute(m_hConsole, m_White);
 }
 
 void Renderer::SwitchNormalMap()
@@ -741,15 +749,16 @@ void Renderer::SwitchNormalMap()
 
 	m_UsingNormalMap = !m_UsingNormalMap;
 
+	SetConsoleTextAttribute(m_hConsole, m_Magenta);
 	if (m_UsingNormalMap)
 	{
-		std::cout << MAGENTA << "Normals Enabled\n";
+		std::cout << " Normals Enabled\n";
 	}
 	else
 	{
-		std::cout << MAGENTA << "Normals Disabled\n";
+		std::cout << " Normals Disabled\n";
 	}
-	std::cout << RESET;
+	SetConsoleTextAttribute(m_hConsole, m_White);
 }
 
 void Renderer::SwitchDepthBufferVisualization()
@@ -758,16 +767,16 @@ void Renderer::SwitchDepthBufferVisualization()
 		return;
 
 	m_DepthBufferVisualization = !m_DepthBufferVisualization;
-
+	SetConsoleTextAttribute(m_hConsole, m_Magenta);
 	if (m_DepthBufferVisualization)
 	{
-		std::cout << MAGENTA << "DepthBuffer Visualization Enabled\n";
+		std::cout << " DepthBuffer Visualization Enabled\n";
 	}
 	else
 	{
-		std::cout << MAGENTA << "DepthBuffer Visualization Disabled\n";
+		std::cout << " DepthBuffer Visualization Disabled\n";
 	}
-	std::cout << RESET;
+	SetConsoleTextAttribute(m_hConsole, m_White);
 }
 
 void Renderer::SwitchBoundingBoxVisualization()
@@ -777,36 +786,53 @@ void Renderer::SwitchBoundingBoxVisualization()
 
 	m_BoundingBoxVisualization = !m_BoundingBoxVisualization;
 
+	SetConsoleTextAttribute(m_hConsole, m_Magenta);
 	if (m_BoundingBoxVisualization)
 	{
-		std::cout << MAGENTA << "BoundingBox Visualization Enabled\n";
+		std::cout << " BoundingBox Visualization Enabled\n";
 	}
 	else
 	{
-		std::cout << MAGENTA << "BoundingBox Visualization Disabled\n";
+		std::cout << " BoundingBox Visualization Disabled\n";
 	}
-	std::cout << RESET;
+	SetConsoleTextAttribute(m_hConsole, m_White);
 }
 
 void Renderer::ToggleUniformClearColor()
 {
 	m_UniformClearColor = !m_UniformClearColor;
 
+	SetConsoleTextAttribute(m_hConsole, m_Yellow);
 	if (m_UniformClearColor)
 	{
-		std::cout << YELLOW << "Uniform ClearColor Enabled\n";
+		std::cout << " Uniform ClearColor Enabled\n";
 	}
 	else
 	{
-		std::cout << YELLOW << "Uniform ClearColor Disabled\n";
+		std::cout << " Uniform ClearColor Disabled\n";
 	}
-	std::cout << RESET;
+	SetConsoleTextAttribute(m_hConsole, m_White);
 }
 
 void Renderer::ToggleCullMode()
 {
-	if (int(m_CullMode) < 2) // < amount cullmodes - 1
-		m_CullMode = CullMode(int(m_CullMode) + 1);
-	else
-		m_CullMode = CullMode(0);
+	m_pMeshes[0]->ToggleCullMode();
+
+	SetConsoleTextAttribute(m_hConsole, m_Yellow);
+	switch (m_pMeshes[0]->GetCullMode())
+	{
+	case Effect::CullMode::None:
+		std::cout << " Cullmode set to None\n";
+		break;
+	case Effect::CullMode::Front:
+		std::cout << " Cullmode set to Front\n";
+		break;
+	case Effect::CullMode::Back:
+		std::cout << " Cullmode set to Back\n";
+		break;
+	default:
+		break;
+	}
+
+	SetConsoleTextAttribute(m_hConsole, m_White);
 }

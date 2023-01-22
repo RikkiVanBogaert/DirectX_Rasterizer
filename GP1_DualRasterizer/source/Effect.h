@@ -20,28 +20,35 @@ public:
 	void SetWorldMatrix(const dae::Matrix& matrix);
 	//Shading
 	void SetDiffuseMap(Texture* pDiffuseTexture);
-
-
-	ID3DX11Effect* GetEffect();
-	ID3DX11EffectTechnique* GetTechnique();
-	ID3D11InputLayout* GetInputLayout();
-
 	void ToggleTechniques();
-	int GetSampleState() const;
+	void ToggleCullMode();
 
-protected:
+	ID3DX11Effect* GetEffect() const;
+	ID3DX11EffectTechnique* GetTechnique() const;
+	ID3D11InputLayout* GetInputLayout() const;
+
 	enum class FilteringMethod
 	{
-		Point, 
+		Point,
 		Linear,
 		Anisotropic
 	};
+	FilteringMethod GetSampleState() const;
+
+	enum class CullMode
+	{
+		None,
+		Front,
+		Back
+	};
+	CullMode GetCullMode() const;
+
+protected:
 	FilteringMethod m_FilteringMethod;
 
-
-	ID3DX11Effect* m_pEffect;
-	ID3DX11EffectTechnique* m_pTechnique;
-	ID3D11InputLayout* m_pInputLayout;
+	ID3DX11Effect* m_pEffect{};
+	ID3DX11EffectTechnique* m_pTechnique{};
+	ID3D11InputLayout* m_pInputLayout{};
 
 	//Transform Matrices
 	ID3DX11EffectMatrixVariable* m_pMatWorldViewProjVariable{};
@@ -52,7 +59,10 @@ protected:
 	ID3DX11EffectShaderResourceVariable* m_pDiffuseMapVariable{};
 
 	//Cullmode
-	ID3DX11EffectRasterizerVariable* m_CullMode{};
+	ID3D11Device* m_pDevice{};
+	CullMode m_CullMode{};
+	ID3D11RasterizerState* m_pRasterizerState{};
+	ID3DX11EffectRasterizerVariable* m_pRasterizerStateVariable{};
 
 	static ID3DX11Effect* LoadEffect(ID3D11Device* pDevice, const std::wstring& assetFile);
 };

@@ -24,8 +24,6 @@ using namespace dae;
 		void Update(const Timer* pTimer);
 		void Render();
 
-		//void RenderRasterizer() const;
-
 		//Switch States
 		void SwitchState();
 		void SwitchRotating();
@@ -47,17 +45,9 @@ using namespace dae;
 
 		bool m_IsInitialized{ false };
 
-		Camera m_Camera;
+		Camera m_Camera{};
 		float m_Angle{};
 		Vector3 m_Translation{};
-
-		enum class CullMode
-		{
-			None,
-			Front,
-			Back
-		};
-		CullMode m_CullMode{ CullMode::None };
 
 		//DIRECTX
 		HRESULT InitializeDirectX();
@@ -77,7 +67,7 @@ using namespace dae;
 		//Rasterizer
 		SDL_Surface* m_pFrontBuffer{ nullptr };
 		SDL_Surface* m_pBackBuffer{ nullptr };
-		uint32_t* m_pBackBufferPixels{};
+		uint32_t* m_pBackBufferPixels{ nullptr };
 		std::vector<MeshRast> m_pMeshesRast;
 
 		float* m_pDepthBufferPixels{};
@@ -110,4 +100,11 @@ using namespace dae;
 		bool m_DepthBufferVisualization = false;
 		bool m_BoundingBoxVisualization = false;
 		bool m_UniformClearColor = false;
+
+		//Color
+		const int m_Yellow{ 14 };
+		const int m_Green{ 10 };
+		const int m_Magenta{ 13 };
+		const int m_Red{ 12 };
+		const int m_White{ 15 };
 	};

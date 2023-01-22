@@ -91,7 +91,7 @@ MeshRepresentation::~MeshRepresentation()
 }
 
 
-void MeshRepresentation::Render(ID3D11DeviceContext* pDeviceContext)
+void MeshRepresentation::Render(ID3D11DeviceContext* pDeviceContext) const
 {
 	//1. Set Primitive Topology
 	pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -119,15 +119,11 @@ void MeshRepresentation::Render(ID3D11DeviceContext* pDeviceContext)
 
 }
 
-void MeshRepresentation::Update(const dae::Matrix& viewProjMatrix, const dae::Matrix& viewInvertMatrix, float angle, Vector3 translation)
+void MeshRepresentation::Update(const dae::Matrix& viewProjMatrix, const dae::Matrix& viewInvertMatrix)
 {
-	m_RotationMatrix = Matrix::CreateRotationY(angle);
-	m_TranslationMatrix = Matrix::CreateTranslation(translation);
-	
-	dae::Matrix worldMatrix{ m_ScaleMatrix * m_RotationMatrix * m_TranslationMatrix };
-	m_pEffect->SetProjectionMatrix(worldMatrix * viewProjMatrix);
+	m_pEffect->SetProjectionMatrix(m_WorldMatrix * viewProjMatrix);
 	m_pEffect->SetViewInvertMatrix( viewInvertMatrix);
-	m_pEffect->SetWorldMatrix(worldMatrix);
+	m_pEffect->SetWorldMatrix(m_WorldMatrix);
 }
 
 void MeshRepresentation::ToggleTechniques() const
@@ -135,7 +131,22 @@ void MeshRepresentation::ToggleTechniques() const
 	m_pEffect->ToggleTechniques();
 }
 
-int MeshRepresentation::GetSampleState() const
+void MeshRepresentation::ToggleCullMode() const
+{
+	m_pEffect->ToggleCullMode();
+}
+
+Effect::FilteringMethod MeshRepresentation::GetSampleState() const
 {
 	return m_pEffect->GetSampleState();
+}
+
+Effect::CullMode MeshRepresentation::GetCullMode() const
+{
+	return m_pEffect->GetCullMode();
+}
+
+void MeshRepresentation::SetWorldMatrix(const Matrix& worldMatrix)
+{
+	m_WorldMatrix = worldMatrix;
 }

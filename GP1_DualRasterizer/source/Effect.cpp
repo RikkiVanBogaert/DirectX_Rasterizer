@@ -4,7 +4,8 @@
 
 
 Effect::Effect(ID3D11Device* pDevice, const std::wstring& assetFile):
-	m_pEffect { LoadEffect(pDevice, assetFile) }
+	m_pEffect { LoadEffect(pDevice, assetFile) },
+	m_pDevice{pDevice}
 {
 
 	m_pTechnique = m_pEffect->GetTechniqueByName("PointFilteringTechnique");
@@ -38,14 +39,12 @@ Effect::Effect(ID3D11Device* pDevice, const std::wstring& assetFile):
 		std::wcout << L"m_pDiffuseMapVariable not valid!\n";
 	}
 
-
 	//Culling
-	m_CullMode = m_pEffect->GetVariableByName("gRasterizerState")->AsRasterizer();
-	if (!m_CullMode->IsValid())
+	m_pRasterizerStateVariable = m_pEffect->GetVariableByName("gRasterizerState")->AsRasterizer();
+	if (!m_pRasterizerStateVariable->IsValid())
 	{
-		std::wcout << L"m_CullMode not valid!\n";
+		std::wcout << L"m_pRasterizerVariable not valid!\n";
 	}
-	//m_CullMode->SetRawValue(reinterpret_cast<const float*>(&"front"), 1, 1); //idk how to use this
 
 }
 
@@ -56,12 +55,6 @@ Effect::~Effect()
 		m_pEffect->Release();
 		m_pEffect = nullptr;
 	}
-
-	/*if(m_pMatWorldViewProjVariable) 
-	{
-		m_pMatWorldViewProjVariable->Release();
-		m_pMatWorldViewProjVariable = nullptr;
-	}*/
 }
 
 
@@ -77,19 +70,16 @@ void Effect::ToggleTechniques()
 	{
 	case Effect::FilteringMethod::Point:
 		m_pTechnique = m_pEffect->GetTechniqueByName("PointFilteringTechnique");
-		//std::wcout << L"Using Point FilterTechnique\n";
 		if (!m_pTechnique->IsValid())
 			std::wcout << L"PointTechnique not valid\n";
 		break;
 	case FilteringMethod::Linear:
 		m_pTechnique = m_pEffect->GetTechniqueByName("LinearFilteringTechnique");
-		//std::wcout << L"Using Linear FilterTechnique\n";
 		if (!m_pTechnique->IsValid())
 			std::wcout << L"LinearTechnique not valid\n";
 		break;
 	case FilteringMethod::Anisotropic:
 		m_pTechnique = m_pEffect->GetTechniqueByName("AnisotropicFilteringTechnique");
-		//std::wcout << L"Using Anisotropic FilterTechnique\n";
 		if (!m_pTechnique->IsValid())
 			std::wcout << L"AnisotropicTechnique not valid\n";
 		break;
@@ -97,6 +87,47 @@ void Effect::ToggleTechniques()
 		break;
 	}
 
+}
+
+
+void Effect::ToggleCullMode() 
+{
+	D3D11_RASTERIZER_DESC rasterizerDesc{};
+	rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+	rasterizerDesc.FrontCounterClockwise = false;
+	rasterizerDesc.DepthBias = 0;
+	rasterizerDesc.SlopeScaledDepthBias = 0.0f;
+	rasterizerDesc.DepthBiasClamp = 0.0f;
+	rasterizerDesc.DepthClipEnable = true;
+	rasterizerDesc.ScissorEnable = false;
+	rasterizerDesc.MultisampleEnable = false;
+	rasterizerDesc.AntialiasedLineEnable = false;
+
+	switch (m_CullMode)
+	{
+	case Effect::CullMode::None:
+	{
+		rasterizerDesc.CullMode = D3D11_CULL_FRONT;
+		m_CullMode = CullMode::Front;
+		break;
+	}
+	case Effect::CullMode::Front:
+	{
+		rasterizerDesc.CullMode = D3D11_CULL_BACK;
+		m_CullMode = CullMode::Back;
+		break;
+	}
+	case Effect::CullMode::Back:
+	{
+		rasterizerDesc.CullMode = D3D11_CULL_NONE;
+		m_CullMode = CullMode::None;
+		break;
+	}
+	}
+
+
+	HRESULT hr{ m_pDevice->CreateRasterizerState(&rasterizerDesc, &m_pRasterizerState) };
+	hr = m_pRasterizerStateVariable->SetRasterizerState(0, m_pRasterizerState);
 }
 
 void Effect::SetProjectionMatrix(const dae::Matrix& matrix)
@@ -120,17 +151,17 @@ void Effect::SetDiffuseMap(Texture* pDiffuseTexture)
 		m_pDiffuseMapVariable->SetResource(pDiffuseTexture->GetSRV());
 }
 
-ID3DX11Effect* Effect::GetEffect()
+ID3DX11Effect* Effect::GetEffect() const
 {
 	return m_pEffect;
 }
 
-ID3DX11EffectTechnique* Effect::GetTechnique()
+ID3DX11EffectTechnique* Effect::GetTechnique() const
 {
 	return m_pTechnique;
 }
 
-ID3D11InputLayout* Effect::GetInputLayout()
+ID3D11InputLayout* Effect::GetInputLayout() const
 {
 	return m_pInputLayout;
 }
@@ -180,21 +211,12 @@ ID3DX11Effect* Effect::LoadEffect(ID3D11Device* pDevice, const std::wstring& ass
 	return pEffect;
 }
 
-int Effect::GetSampleState() const
+Effect::FilteringMethod Effect::GetSampleState() const
 {
-	switch (m_FilteringMethod)
-	{
-	case FilteringMethod::Point:
-		return 0;
-		break;
-	case FilteringMethod::Linear:
-		return 1;
-		break;
-	case FilteringMethod::Anisotropic:
-		return 2;
-		break;
-	default:
-		return 4;
-		break;
-	}
+	return m_FilteringMethod;
+}
+
+Effect::CullMode Effect::GetCullMode() const
+{
+	return m_CullMode;
 }

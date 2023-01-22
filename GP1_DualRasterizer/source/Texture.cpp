@@ -78,10 +78,6 @@ Texture::Texture(SDL_Surface* pSurface) :
 
 Texture* Texture::LoadFromFile(const std::string& path)
 {
-	//TODO
-	//Load SDL_Surface using IMG_LOAD
-	//Create & Return a new Texture Object (using SDL_Surface)
-
 	const auto loadedImage{ IMG_Load(path.c_str()) };
 	assert(loadedImage != nullptr && "There was no file found");
 
@@ -94,8 +90,8 @@ ColorRGB Texture::Sample(const dae::Vector2& uv) const
 {
 	Uint8 r, g, b;
 
-	const size_t x{ static_cast<size_t>(uv.x * m_pSurface->w) };
-	const size_t y{ static_cast<size_t>(uv.y * m_pSurface->h) };
+	const size_t x{ size_t(uv.x * m_pSurface->w) };
+	const size_t y{ size_t(uv.y * m_pSurface->h) };
 
 	const Uint32 pixel{ m_pSurfacePixels[x + y * m_pSurface->w] };
 

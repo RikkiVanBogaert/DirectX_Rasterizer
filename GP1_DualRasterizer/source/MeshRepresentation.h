@@ -19,11 +19,20 @@ public:
 	MeshRepresentation(ID3D11Device* pDevice, const std::string& objFilePath, Effect* pEffect);
 	~MeshRepresentation();
 
-	void Render(ID3D11DeviceContext* pDeviceContext);
-	void Update(const dae::Matrix& viewProjMatrix, const dae::Matrix& viewInvertMatrix, float angle, Vector3 translation);
-	void ToggleTechniques() const;
+	MeshRepresentation(const MeshRepresentation&) = delete;
+	MeshRepresentation(MeshRepresentation&&) noexcept = delete;
+	MeshRepresentation& operator=(const MeshRepresentation&) = delete;
+	MeshRepresentation& operator=(MeshRepresentation&&) noexcept = delete;
 
-	int GetSampleState() const;
+	void Render(ID3D11DeviceContext* pDeviceContext) const;
+	void Update(const dae::Matrix& viewProjMatrix, const dae::Matrix& viewInvertMatrix);
+	void ToggleTechniques() const;
+	void ToggleCullMode() const;
+
+	Effect::FilteringMethod GetSampleState() const;
+	Effect::CullMode GetCullMode() const;
+
+	void SetWorldMatrix(const Matrix& worldMatrix);
 
 private:
 	ID3D11Buffer* m_pVertexBuffer{nullptr};
@@ -36,5 +45,6 @@ private:
 	Matrix m_RotationMatrix{ Vector3::UnitX, Vector3::UnitY, Vector3::UnitZ, Vector3::Zero };
 	Matrix m_ScaleMatrix{ Vector3::UnitX, Vector3::UnitY, Vector3::UnitZ, Vector3::Zero };
 
+	Matrix m_WorldMatrix{};
 };
 
